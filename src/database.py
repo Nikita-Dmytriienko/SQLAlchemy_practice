@@ -19,9 +19,9 @@ async_engine = create_async_engine(
 )
 
 
-#with engine.connect() as conn:
-    #res = conn.execute(text("SELECT 1,2,3 union select 4,5,6"))
-    #print(f"{res.first()=}")
+with engine.connect() as conn:
+    res = conn.execute(text("SELECT 1,2,3 union select 4,5,6"))
+    print(f"{res.first()=}")
 
 async def get_123():
     async with async_engine.connect() as conn:
