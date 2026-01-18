@@ -3,10 +3,10 @@ from src.database import async_engine, engine
 from src.models import metadata_obj
 
 
-
-with engine.connect() as conn:
-    res = conn.execute(text("SELECT 1,2,3 union select 4,5,6"))
-    print(f"{res.first()=}")
+def get_123_sync():
+    with engine.connect() as conn:
+        res = conn.execute(text("SELECT 1,2,3 union select 4,5,6"))
+        print(f"{res.first()=}")
 
 async def get_123():
     async with async_engine.connect() as conn:
@@ -15,4 +15,14 @@ async def get_123():
 
 
 def create_tables():
+    metadata_obj.drop_all(engine)
     metadata_obj.create_all(engine)
+
+
+def insert_data():
+    with engine.connect() as conn:
+        stmt = """INSERT INTO employers (username) VALUES
+                ('Boba'),
+                ('Roma'),
+                ('Vitya');
+       """
