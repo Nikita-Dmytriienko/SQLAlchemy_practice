@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import create_async_engine
 from src.config import settings
 
-engine = create_engine(
+sync_engine = create_engine(
     url=settings.database_url_psycopg,
     echo=True,
     pool_size=5,
@@ -19,7 +19,7 @@ async_engine = create_async_engine(
 )
 
 
-with engine.connect() as conn:
+with sync_engine.connect() as conn:
     res = conn.execute(text("SELECT 1,2,3 union select 4,5,6"))
     print(f"{res.first()=}")
 
