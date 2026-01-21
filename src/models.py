@@ -3,6 +3,27 @@
 from sqlalchemy import Table, String, Integer, Column, MetaData
 from sqlalchemy.orm import Mapped, mapped_column
 
+from database import Base
+
+
+class WorkersORM(Base):
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 metadata_obj = MetaData()
 
@@ -12,4 +33,6 @@ workers_table = Table(
     Column("id", Integer, primary_key=True),
           Column("username", String),
 )
+
+
 

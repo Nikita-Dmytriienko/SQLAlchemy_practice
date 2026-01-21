@@ -1,8 +1,8 @@
 import asyncio
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_session, async_sessionmaker
+from sqlalchemy.orm import Session, sessionmaker, DeclarativeBase
 from src.config import settings
 
 sync_engine = create_engine(
@@ -30,3 +30,10 @@ async def get_123():
         print(f"{res.first()=}")
 
 asyncio.run(get_123())
+
+session = sessionmaker(sync_engine)
+async_session = async_sessionmaker(async_engine)
+
+class Base(DeclarativeBase):
+    pass
+
