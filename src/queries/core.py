@@ -1,6 +1,6 @@
-﻿from sqlalchemy import text
+﻿from sqlalchemy import text, insert
 from src.database import async_engine, sync_engine
-from src.models import metadata_obj
+from src.models import metadata_obj, workers_table
 
 
 def get_123_sync():
@@ -23,8 +23,15 @@ def create_tables():
 
 def insert_data():
     with sync_engine.connect() as conn:
-        stmt = """INSERT INTO employers (username) VALUES
-                ('Boba'),
-                ('Roma'),
-                ('Vitya');"""
-        conn.execute(text(stmt))
+        # stmt = """INSERT INTO workers (username) VALUES
+        #         ('Boba'),
+        #         ('Roma'),
+        #         ('Vitya');"""
+        stmt = insert(workers_table).values(
+            [
+                {"username": 'Vasya'},
+                {"username": 'Max'},
+            ]
+        )
+        conn.execute(stmt)
+        conn.commit()
