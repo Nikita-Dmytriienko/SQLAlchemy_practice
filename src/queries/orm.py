@@ -10,8 +10,8 @@ def create_tables():
 
 
 async def insert_data():
-   async with async_session_factory() as session:
+    async with async_session_factory() as session:
         worker_bobr = WorkersORM(username="Bobr")
         worker_zebra = WorkersORM(username="Zebra")
-        session.add_all([worker_bobr, worker_zebra])
+        await session.add_all([worker_bobr, worker_zebra])
         await session.commit()

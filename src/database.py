@@ -39,4 +39,3 @@ class Base(DeclarativeBase):
     type_annotation_map = {
         str_256: String(256)
     }
-
