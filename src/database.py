@@ -1,4 +1,6 @@
-from sqlalchemy import create_engine, text
+from typing import Annotated
+
+from sqlalchemy import create_engine, text, String
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from src.config import settings
@@ -23,14 +25,18 @@ with sync_engine.connect() as conn:
     print(f"{res.first()=}")
 
 async def get_123():
-    async with async_engine.connect() as conn:
-        res = await conn.execute(text("SELECT 1,2,3 union select 4,5,6"))
-        print(f"{res.first()=}")
+    async with async_engine.connect() as connection:
+        result = await connection.execute(text("SELECT 1,2,3 union select 4,5,6"))
+        print(f"{result.first()=}")
 
 
 session_factory = sessionmaker(sync_engine)
 async_session_factory = async_sessionmaker(async_engine)
 
+str_256 = Annotated[str, 256]
+
 class Base(DeclarativeBase):
-    pass
+    type_annotation_map = {
+        str_256: String(256)
+    }
 
