@@ -1,11 +1,24 @@
-﻿from typing import Optional
+﻿import datetime
+import enum
+from typing import Annotated, Optional
 
-from sqlalchemy import Table, String, Integer, Column, MetaData, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    TIMESTAMP,
+    CheckConstraint,
+    Column,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    MetaData,
+    PrimaryKeyConstraint,
+    String,
+    Table,
+    text,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
-
-import enum
 
 
 class WorkersORM(Base):
@@ -26,7 +39,12 @@ class ResumesOrm(Base):
     title: Mapped[str] = mapped_column()
     compensation: Mapped[Optional[int]] = mapped_column(nullable=True)
     workload: Mapped[Workload]
-    worker: Mapped[id] = mapped_column(ForeignKey=("workers.id"))
+    worker_id: Mapped[int] = mapped_column(ForeignKey("workers.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        server_default=text("TIMEZONE('utc', now())"),
+        onupdate=datetime.datetime.now
+    )
 
 
 
