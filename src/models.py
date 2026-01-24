@@ -38,7 +38,7 @@ class WorkersORM(Base):
 
 
 class Workload(enum.Enum):
-    partime = "parttime"
+    parttime = "parttime"
     fulltime = "fulltime"
 
 
@@ -52,9 +52,6 @@ class ResumesOrm(Base):
     worker_id: Mapped[int] = mapped_column(ForeignKey("workers.id", ondelete="CASCADE"))
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
-
-
-
 
 
 
