@@ -1,6 +1,35 @@
-﻿from src.database import sync_engine, async_session_factory, Base
-from src.models import WorkersORM
+﻿from src.database import sync_engine, async_session_factory, Base, session_factory, async_engine
+from src.models import WorkersOrm, ResumesOrm, Workload
 
+from sqlalchemy import select, insert, func, Integer, and_
+
+
+class SyncORM:
+    @staticmethod
+    def create_tables():
+        sync_engine.echo = False
+        Base.metadata.drop_all(sync_engine)
+        Base.metadata.create_all(sync_engine)
+        sync_engine.echo = True
+
+    @staticmethod
+    def insert_workers():
+        with session_factory() as session:
+            worker_jack = WorkersOrm(username="Jack")
+            worker_michael = WorkersOrm(username="Michael")
+            session.add_all([worker_jack, worker_michael])
+            # flush sends a request to the database
+            # After flush, each worker receives the primary key id that was given to the database.
+            session.flush()
+            session.commit()
+
+    @staticmethod
+    def select_workers():
+        with session_factory() as session:
+            query = select(WorkersOrm)
+            result = session.execute(query)
+            workers = result.scalars().all()
+            print(f"{workers=}")
 
 def create_tables():
     Base.metadata.drop_all(sync_engine)
@@ -11,7 +40,105 @@ def create_tables():
 
 async def insert_data():
     async with async_session_factory() as session:
-        worker_sonya = WorkersORM(username="Sonya")
-        worker_vika = WorkersORM(username="Vika")
+        worker_sonya = WorkersOrm(username="Sonya")
+        worker_vika = WorkersOrm(username="Vika")
         session.add_all([worker_sonya, worker_vika])
         await session.commit()
+
+#Async version
+class AsyncORM:
+    @staticmethod
+    async def create_tables():
+        async with async_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
+
+    @staticmethod
+    async def insert_workers():
+        async with async_session_factory() as session:
+            worker_jack = WorkersOrm(username="Jack")
+            worker_michael = WorkersOrm(username="Michael")
+            session.add_all([worker_jack, worker_michael])
+            # flush interacts with the database, so we write await
+            await session.flush()
+            await session.commit()
+
+    @staticmethod
+    async def select_workers():
+        async with async_session_factory() as session:
+            query = select(WorkersOrm)
+            result = await session.execute(query)
+            workers = result.scalars().all()
+            print(f"{workers=}")
+
+    @staticmethod
+    async def update_worker(worker_id: int = 2, new_username: str = "Misha"):
+        async with async_session_factory() as session:
+            worker_michael = await session.get(WorkersOrm, worker_id)
+            worker_michael.username = new_username
+            await session.refresh(worker_michael)
+            await session.commit()
+
+    @staticmethod
+    async def insert_resumes():
+        async with async_session_factory() as session:
+            resume_jack_1 = ResumesOrm(
+                title="Python Junior Developer", compensation=50000, workload=Workload.fulltime, worker_id=1)
+            resume_jack_2 = ResumesOrm(
+                title="Python Developer", compensation=150000, workload=Workload.fulltime, worker_id=1)
+            resume_michael_1 = ResumesOrm(
+                title="Python Data Engineer", compensation=250000, workload=Workload.parttime, worker_id=2)
+            resume_michael_2 = ResumesOrm(
+                title="Data Scientist", compensation=300000, workload=Workload.fulltime, worker_id=2)
+            session.add_all([resume_jack_1, resume_jack_2,
+                             resume_michael_1, resume_michael_2])
+            await session.commit()
+
+    @staticmethod
+    async def select_resumes_avg_compensation(like_language: str = "Python"):
+        """
+        select workload, avg(compensation)::int as avg_compensation
+        from resumes
+        where title like '%Python%' and compensation > 40000
+        group by workload
+        having avg(compensation) > 70000
+        """
+        async with async_session_factory() as session:
+            query = (
+                select(
+                    ResumesOrm.workload,
+                    func.avg(ResumesOrm.compensation).cast(Integer).label("avg_compensation"),
+                )
+                .select_from(ResumesOrm)
+                .filter(and_(
+                    ResumesOrm.title.contains(like_language),
+                    ResumesOrm.compensation > 40000,
+                ))
+                .group_by(ResumesOrm.workload)
+                .having(func.avg(ResumesOrm.compensation) > 70000)
+            )
+            print(query.compile(compile_kwargs={"literal_binds": True}))
+            res = await session.execute(query)
+            result = res.all()
+            print(result[0].avg_compensation)
+
+    @staticmethod
+    async def insert_additional_resumes():
+        async with async_session_factory() as session:
+            workers = [
+                {"username": "Artem"},  # id 3
+                {"username": "Nekets"},  # id 4
+                {"username": "Vlados"},   # id 5
+            ]
+            resumes = [
+                {"title": "Python developer", "compensation": 60000, "workload": "fulltime", "worker_id": 3},
+                {"title": "Machine Learning Engineer", "compensation": 70000, "workload": "parttime", "worker_id": 3},
+                {"title": "Python Data Scientist", "compensation": 80000, "workload": "parttime", "worker_id": 4},
+                {"title": "Python Analyst", "compensation": 90000, "workload": "fulltime", "worker_id": 4},
+                {"title": "Python Junior Developer", "compensation": 100000, "workload": "fulltime", "worker_id": 5},
+            ]
+            insert_workers = insert(WorkersOrm).values(workers)
+            insert_resumes = insert(ResumesOrm).values(resumes)
+            await session.execute(insert_workers)
+            await session.execute(insert_resumes)
+            await session.commit()
