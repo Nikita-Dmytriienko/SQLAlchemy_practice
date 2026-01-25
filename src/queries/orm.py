@@ -3,15 +3,15 @@ from src.models import WorkersORM
 
 
 def create_tables():
-    sync_engine.echo = False
     Base.metadata.drop_all(sync_engine)
+    sync_engine.echo = True
     Base.metadata.create_all(sync_engine)
     sync_engine.echo = True
 
 
 async def insert_data():
     async with async_session_factory() as session:
-        worker_bobr = WorkersORM(username="Bobr")
-        worker_zebra = WorkersORM(username="Zebra")
-        await session.add_all([worker_bobr, worker_zebra])
+        worker_sonya = WorkersORM(username="Sonya")
+        worker_vika = WorkersORM(username="Vika")
+        session.add_all([worker_sonya, worker_vika])
         await session.commit()
