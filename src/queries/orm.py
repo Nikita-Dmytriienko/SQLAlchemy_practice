@@ -1,7 +1,13 @@
-﻿from src.database import sync_engine, async_session_factory, Base, session_factory, async_engine
-from src.models import WorkersOrm, ResumesOrm, Workload
+from sqlalchemy import Integer, and_, func, insert, select
 
-from sqlalchemy import select, insert, func, Integer, and_
+from src.database import (
+    Base,
+    async_engine,
+    async_session_factory,
+    session_factory,
+    sync_engine,
+)
+from src.models import ResumesOrm, WorkersOrm, Workload
 
 
 class SyncORM:
@@ -31,21 +37,74 @@ class SyncORM:
             workers = result.scalars().all()
             print(f"{workers=}")
 
-def create_tables():
-    Base.metadata.drop_all(sync_engine)
-    sync_engine.echo = True
-    Base.metadata.create_all(sync_engine)
-    sync_engine.echo = True
+    @staticmethod
+    def update_worker(worker_id: int = 2, new_username: str = "Misha"):
+        with session_factory() as session:
+            worker_michael = session.get(WorkersOrm, worker_id)
+            worker_michael.username = new_username
+            session.refresh(worker_michael)
+            session.commit()
+
+    @staticmethod
+    def insert_resumes():
+        with session_factory() as session:
+            resume_jack_1 = ResumesOrm(
+                title="Python Junior Developer",
+                compensation=50000,
+                workload=Workload.fulltime,
+                worker_id=1,
+            )
+            resume_jack_2 = ResumesOrm(
+                title="Python Developer",
+                compensation=150000,
+                workload=Workload.fulltime,
+                worker_id=1,
+            )
+            resume_michael_1 = ResumesOrm(
+                title="Python Data Engineer",
+                compensation=250000,
+                workload=Workload.parttime,
+                worker_id=2,
+            )
+            resume_michael_2 = ResumesOrm(
+                title="Data Scientist",
+                compensation=300000,
+                workload=Workload.fulltime,
+                worker_id=2,
+            )
+            session.add_all(
+                [resume_jack_1, resume_jack_2, resume_michael_1, resume_michael_2]
+            )
+            session.commit()
+            sync_engine.echo = True
+
+    @staticmethod
+    def select_resumes_avg_compensation(like_language: str = "Python"):
+        with session_factory() as session:
+            query = (
+                select(
+                    ResumesOrm.workload,
+                    func.avg(ResumesOrm.compensation)
+                    .cast(Integer)
+                    .label("avg_compensation"),
+                )
+                .select_from(ResumesOrm)
+                .filter(
+                    and_(
+                        ResumesOrm.title.contains(like_language),
+                        ResumesOrm.compensation > 40000,
+                    )
+                )
+                .group_by(ResumesOrm.workload)
+                .having(func.avg(ResumesOrm.compensation) > 70000)
+            )
+            print(query.compile(compile_kwargs={"literal_binds": True}))
+            res = session.execute(query)
+            result = res.all()
+            print(result)
 
 
-async def insert_data():
-    async with async_session_factory() as session:
-        worker_sonya = WorkersOrm(username="Sonya")
-        worker_vika = WorkersOrm(username="Vika")
-        session.add_all([worker_sonya, worker_vika])
-        await session.commit()
-
-#Async version
+# Async version
 class AsyncORM:
     @staticmethod
     async def create_tables():
@@ -83,15 +142,32 @@ class AsyncORM:
     async def insert_resumes():
         async with async_session_factory() as session:
             resume_jack_1 = ResumesOrm(
-                title="Python Junior Developer", compensation=50000, workload=Workload.fulltime, worker_id=1)
+                title="Python Junior Developer",
+                compensation=50000,
+                workload=Workload.fulltime,
+                worker_id=1,
+            )
             resume_jack_2 = ResumesOrm(
-                title="Python Developer", compensation=150000, workload=Workload.fulltime, worker_id=1)
+                title="Python Developer",
+                compensation=150000,
+                workload=Workload.fulltime,
+                worker_id=1,
+            )
             resume_michael_1 = ResumesOrm(
-                title="Python Data Engineer", compensation=250000, workload=Workload.parttime, worker_id=2)
+                title="Python Data Engineer",
+                compensation=250000,
+                workload=Workload.parttime,
+                worker_id=2,
+            )
             resume_michael_2 = ResumesOrm(
-                title="Data Scientist", compensation=300000, workload=Workload.fulltime, worker_id=2)
-            session.add_all([resume_jack_1, resume_jack_2,
-                             resume_michael_1, resume_michael_2])
+                title="Data Scientist",
+                compensation=300000,
+                workload=Workload.fulltime,
+                worker_id=2,
+            )
+            session.add_all(
+                [resume_jack_1, resume_jack_2, resume_michael_1, resume_michael_2]
+            )
             await session.commit()
 
     @staticmethod
@@ -107,13 +183,17 @@ class AsyncORM:
             query = (
                 select(
                     ResumesOrm.workload,
-                    func.avg(ResumesOrm.compensation).cast(Integer).label("avg_compensation"),
+                    func.avg(ResumesOrm.compensation)
+                    .cast(Integer)
+                    .label("avg_compensation"),
                 )
                 .select_from(ResumesOrm)
-                .filter(and_(
-                    ResumesOrm.title.contains(like_language),
-                    ResumesOrm.compensation > 40000,
-                ))
+                .filter(
+                    and_(
+                        ResumesOrm.title.contains(like_language),
+                        ResumesOrm.compensation > 40000,
+                    )
+                )
                 .group_by(ResumesOrm.workload)
                 .having(func.avg(ResumesOrm.compensation) > 70000)
             )
@@ -128,14 +208,39 @@ class AsyncORM:
             workers = [
                 {"username": "Artem"},  # id 3
                 {"username": "Nekets"},  # id 4
-                {"username": "Vlados"},   # id 5
+                {"username": "Vlados"},  # id 5
             ]
             resumes = [
-                {"title": "Python developer", "compensation": 60000, "workload": "fulltime", "worker_id": 3},
-                {"title": "Machine Learning Engineer", "compensation": 70000, "workload": "parttime", "worker_id": 3},
-                {"title": "Python Data Scientist", "compensation": 80000, "workload": "parttime", "worker_id": 4},
-                {"title": "Python Analyst", "compensation": 90000, "workload": "fulltime", "worker_id": 4},
-                {"title": "Python Junior Developer", "compensation": 100000, "workload": "fulltime", "worker_id": 5},
+                {
+                    "title": "Python developer",
+                    "compensation": 60000,
+                    "workload": "fulltime",
+                    "worker_id": 3,
+                },
+                {
+                    "title": "Machine Learning Engineer",
+                    "compensation": 70000,
+                    "workload": "parttime",
+                    "worker_id": 3,
+                },
+                {
+                    "title": "Python Data Scientist",
+                    "compensation": 80000,
+                    "workload": "parttime",
+                    "worker_id": 4,
+                },
+                {
+                    "title": "Python Analyst",
+                    "compensation": 90000,
+                    "workload": "fulltime",
+                    "worker_id": 4,
+                },
+                {
+                    "title": "Python Junior Developer",
+                    "compensation": 100000,
+                    "workload": "fulltime",
+                    "worker_id": 5,
+                },
             ]
             insert_workers = insert(WorkersOrm).values(workers)
             insert_resumes = insert(ResumesOrm).values(resumes)
