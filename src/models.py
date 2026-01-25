@@ -3,20 +3,15 @@ import enum
 from typing import Annotated, Optional
 
 from sqlalchemy import (
-    TIMESTAMP,
-    CheckConstraint,
     Column,
-    Enum,
     ForeignKey,
-    Index,
     Integer,
     MetaData,
-    PrimaryKeyConstraint,
     String,
     Table,
     text,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.database import Base, str_256
 
@@ -28,10 +23,10 @@ created_at = Annotated[
 updated_at = Annotated[
     datetime.datetime, mapped_column(
         server_default=text("TIMEZONE('utc', now())"),
-        onupdate=datetime.datetime.utcnow)
+        onupdate=datetime.datetime.now(datetime.UTC))
 ]
 
-class WorkersORM(Base):
+class WorkersOrm(Base):
     __tablename__ = "workers"
     id: Mapped[int_pk]
     username: Mapped[str] = mapped_column()
