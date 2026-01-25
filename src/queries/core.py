@@ -23,12 +23,6 @@ class SyncCore:
         sync_engine.echo = True
 
     @staticmethod
-    def create_tables():
-        sync_engine.echo = False
-        metadata_obj.drop_all(sync_engine)
-        metadata_obj.create_all(sync_engine)
-        sync_engine.echo = True
-
     def insert_workers():
         with sync_engine.connect() as conn:
             stmt = insert(workers_table).values(
@@ -40,12 +34,22 @@ class SyncCore:
             conn.execute(stmt)
             conn.commit()
 
-    # @staticmethod
-    # def select_workers():
-    #     with session_factory() as session:
-    #         query = select(WorkersOrm)
-    #         result = session.execute(query)
-    #         workers = result.scalars().all()
+    @staticmethod
+    def select_workers():
+        with sync_engine.connect() as conn:
+            query = select(workers_table) # SELECT * FROM workers
+            result = conn.execute(query)
+            workers = result.all()
+            print(f"{workers=}")
+
+    @staticmethod
+    def update_workers(worker_id: int = 2, new_username: str = "Nelya"):
+        with sync_engine.connect() as conn:
+            stmt = text("UPDATE workers SET username=:new_username WHERE id=:id")
+            stmt = stmt.bindparams(new_username=new_username, id=worker_id)
+            conn.execute(stmt)
+            conn.commit()
+
 
 #Async  version
 class AsyncCore:
@@ -54,10 +58,3 @@ class AsyncCore:
         async with async_engine.begin() as conn:
             await conn.run_sync(metadata_obj.drop_all)
             await conn.run_sync(metadata_obj.create_all)
-
-        # @staticmethod
-        # def create_tables():
-        #     sync_engine.echo = False
-        #     metadata_obj.drop_all(sync_engine)
-        #     metadata_obj.create_all(sync_engine)
-        #     sync_engine.echo = True
