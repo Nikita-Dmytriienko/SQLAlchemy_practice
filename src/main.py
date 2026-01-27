@@ -13,6 +13,7 @@ SyncORM.select_workers()
 SyncORM.update_worker()
 
 SyncORM.insert_resumes()
+SyncORM.insert_additional_resumes()
 SyncORM.select_resumes_avg_compensation()
 
 # SyncCore.create_tables()
