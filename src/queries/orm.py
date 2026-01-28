@@ -1,4 +1,5 @@
 from sqlalchemy import Integer, and_, func, insert, select
+from sqlalchemy.orm import aliased
 
 from src.database import (
     Base,
@@ -168,22 +169,46 @@ class SyncORM:
         select * from helper2
         order by compensation_diff desc;
         """
-        # r = aliased(ResumesOrm)
-        # w = aliased(WorkersOrm)
-        # subq = (
-        #     select(
-        #         r,
-        #         w,
-        #         func.avg(r.compensation)
-        #         .over(partition_by=r.workload)
-        #         .cast(Integer)
-        #         .label("avg_workload_compensation"),
-        #     )
-        #     # .select_from(r)  #
-        #     # .join(full=True) # for full join
-        # )
-        # cte = ()
-        # query = ()
+        with session_factory() as session:
+            r = aliased(ResumesOrm)
+            w = aliased(WorkersOrm)
+            subq = (
+                select(
+                    r,
+                    w,
+                    func.avg(r.compensation)
+                    .over(partition_by=r.workload)
+                    .cast(Integer)
+                    .label("avg_workload_compensation"),
+                )
+                # .select_from(r)  # when implicit column specification
+                # .join(full=True) # for full join
+                # anon_1
+                .join(r, r.worker_id == w.id)
+                .subquery("helper1")
+            )
+            cte = select(
+                subq.c.id,
+                subq.c.username,
+                subq.c.compensation,
+                subq.c.workload,
+                subq.c.avg_workload_compensation,
+                (subq.c.compensation - subq.c.avg_workload_compensation).label(
+                    "compensation_diff"
+                ),
+            ).cte("helper2")
+            query = (
+                select(cte).order_by(
+                    cte.c.compensation_diff.desc
+                )  # or .order_by(cte.c.compensation_diff.asc) ASC
+            )
+
+            res = session.execute(query)
+            result = res.all()
+
+            print(f"{result=}")
+
+            # print(query.compile(compile_kwargs={"literal_binds": True}))
 
 
 # Async version
