@@ -149,6 +149,42 @@ class SyncORM:
             session.execute(insert_resumes)
             session.commit()
 
+    @staticmethod
+    def join_cte_subquery_window_func(like_language: str = "Python"):
+        """
+        with helper2 as(
+
+                select *, compensation-avg_workload_compensation as compensation_diff
+        from
+        (select
+        w.id,
+        w.username,
+        r.compensation,
+        r.workload,
+        avg(r.compensation) over (partition by workload) ::int as avg_workload_compensation
+        from resumes r
+        join workers w on r.worker_id = w.id) helper1
+        )
+        select * from helper2
+        order by compensation_diff desc;
+        """
+        # r = aliased(ResumesOrm)
+        # w = aliased(WorkersOrm)
+        # subq = (
+        #     select(
+        #         r,
+        #         w,
+        #         func.avg(r.compensation)
+        #         .over(partition_by=r.workload)
+        #         .cast(Integer)
+        #         .label("avg_workload_compensation"),
+        #     )
+        #     # .select_from(r)  #
+        #     # .join(full=True) # for full join
+        # )
+        # cte = ()
+        # query = ()
+
 
 # Async version
 class AsyncORM:
