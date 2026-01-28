@@ -103,6 +103,52 @@ class SyncORM:
             result = res.all()
             print(result)
 
+    @staticmethod
+    def insert_additional_resumes():
+        with session_factory() as session:
+            workers = [
+                {"username": "Artem"},  # id 3
+                {"username": "Roman"},  # id 4
+                {"username": "Petr"},  # id 5
+            ]
+            resumes = [
+                {
+                    "title": "Python developer",
+                    "compensation": 60000,
+                    "workload": "fulltime",
+                    "worker_id": 3,
+                },
+                {
+                    "title": "Machine Learning Engineer",
+                    "compensation": 70000,
+                    "workload": "parttime",
+                    "worker_id": 3,
+                },
+                {
+                    "title": "Python Data Scientist",
+                    "compensation": 80000,
+                    "workload": "parttime",
+                    "worker_id": 4,
+                },
+                {
+                    "title": "Python Analyst",
+                    "compensation": 90000,
+                    "workload": "fulltime",
+                    "worker_id": 4,
+                },
+                {
+                    "title": "Python Junior Developer",
+                    "compensation": 100000,
+                    "workload": "fulltime",
+                    "worker_id": 5,
+                },
+            ]
+            insert_workers = insert(WorkersOrm).values(workers)
+            insert_resumes = insert(ResumesOrm).values(resumes)
+            session.execute(insert_workers)
+            session.execute(insert_resumes)
+            session.commit()
+
 
 # Async version
 class AsyncORM:
