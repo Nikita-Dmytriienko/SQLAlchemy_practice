@@ -188,7 +188,7 @@ class SyncORM:
                 .subquery("helper1")
             )
             cte = select(
-                subq.c.id,
+                subq.c.worker_id,
                 subq.c.username,
                 subq.c.compensation,
                 subq.c.workload,
